@@ -32,9 +32,9 @@ jobs:
             ${{ runner.os }}-cargo-stellar-cli-
 
       - name: Install Stellar CLI
-        uses: stellar/actions/setup-cli@v2
-        with:
-          version: 22.0.0
+        run: |
+          curl -fsSL https://github.com/stellar/stellar-cli/raw/main/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Run deploy script
         run: |
