@@ -31,11 +31,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-stellar-cli-
 
-      - name: Install cargo-binstall
-        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
       - name: Install Stellar CLI
-        run: cargo binstall -y stellar-cli@21.2.0
+        uses: stellar/actions/setup-cli@v2
+        with:
+          version: 22.0.0
 
       - name: Run deploy script
         run: |
