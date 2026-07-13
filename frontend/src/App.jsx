@@ -63,10 +63,25 @@ export default function App() {
         CONTRACTS.TRANSLOG_CONTRACT_ID,
         wallet.signTransaction
       );
-      setSuccess(`Product registered on-chain. Transaction: ${result.hash}`);
+      setSuccess(
+        <>
+          Product registered on-chain. Transaction:{' '}
+          <a
+            href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-verified/50 hover:text-white transition-colors"
+          >
+            {result.hash.slice(0, 10)}...{result.hash.slice(-10)}
+          </a>
+        </>
+      );
       wallet.fetchBalance(wallet.address);
-      // In a production build, decode the return value from the tx result to get the exact ID.
-      setRegisteredProductId('see transaction result / next sequential ID');
+      if (result.returnValue !== undefined && result.returnValue !== null) {
+        setRegisteredProductId(result.returnValue.toString());
+      } else {
+        setRegisteredProductId('see transaction result / next sequential ID');
+      }
     } catch (err) {
       setError(`Failed to register product: ${err.message}`);
     } finally {
@@ -89,7 +104,19 @@ export default function App() {
         wallet.address,
         wallet.signTransaction
       );
-      setSuccess(`Custody transferred on-chain. Transaction: ${result.hash}`);
+      setSuccess(
+        <>
+          Custody transferred on-chain. Transaction:{' '}
+          <a
+            href={`https://stellar.expert/explorer/testnet/tx/${result.hash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline decoration-verified/50 hover:text-white transition-colors"
+          >
+            {result.hash.slice(0, 10)}...{result.hash.slice(-10)}
+          </a>
+        </>
+      );
       wallet.fetchBalance(wallet.address);
     } catch (err) {
       setError(`Transfer failed: ${err.message}`);

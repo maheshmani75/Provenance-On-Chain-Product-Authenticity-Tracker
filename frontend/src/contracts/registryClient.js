@@ -78,7 +78,11 @@ class BaseClient {
     for (let i = 0; i < attempts; i++) {
       const result = await server.getTransaction(hash);
       if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-        return { hash, status: 'SUCCESS', result };
+        let returnValue = null;
+        if (result.returnValue) {
+          returnValue = scValToNative(result.returnValue);
+        }
+        return { hash, status: 'SUCCESS', result, returnValue };
       }
       if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
         throw new Error(`Transaction failed on-chain: ${hash}`);
