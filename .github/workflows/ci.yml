@@ -30,14 +30,14 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build transfer-log contract (wasm)
+      - name: Build transfer-log contract (wasm) — required by registry contractimport!
         run: cargo build --target wasm32v1-none --release -p transfer-log
 
       - name: Build product-registry contract (wasm)
         run: cargo build --target wasm32v1-none --release -p product-registry
 
       - name: Run contract tests
-        run: cargo test --workspace --verbose
+        run: cargo test --workspace --verbose 2>&1 | tail -60
 
   frontend:
     name: Frontend — lint, test & build
