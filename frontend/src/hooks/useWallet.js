@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   StellarWalletsKit,
+  WalletNetwork,
   allowAllModules,
 } from '@creit.tech/stellar-wallets-kit';
 import { NETWORK } from '../contracts/config';
@@ -10,7 +11,7 @@ let kitInstance = null;
 function getKit() {
   if (!kitInstance) {
     kitInstance = new StellarWalletsKit({
-      network: 'TESTNET',
+      network: WalletNetwork.TESTNET,
       selectedWalletId: undefined,
       modules: allowAllModules(),
     });
