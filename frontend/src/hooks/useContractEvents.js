@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { rpc } from '@stellar/stellar-sdk';
+import { SorobanRpc } from '@stellar/stellar-sdk';
 import { NETWORK, CONTRACTS } from '../contracts/config';
 
-const server = new rpc.Server(NETWORK.rpcUrl);
+const server = new SorobanRpc.Server(NETWORK.rpcUrl);
 const POLL_INTERVAL_MS = 4000;
 
 /**
