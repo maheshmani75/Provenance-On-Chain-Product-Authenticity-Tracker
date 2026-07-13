@@ -1,6 +1,6 @@
 import {
   Contract,
-  SorobanRpc,
+  rpc,
   TransactionBuilder,
   BASE_FEE,
   Address,
@@ -9,7 +9,7 @@ import {
 } from '@stellar/stellar-sdk';
 import { NETWORK, CONTRACTS } from './config';
 
-const server = new SorobanRpc.Server(NETWORK.rpcUrl, { allowHttp: false });
+const server = new rpc.Server(NETWORK.rpcUrl, { allowHttp: false });
 
 // ─── ScVal helpers ────────────────────────────────────────────────────────────
 // Build XDR ScVals manually to avoid nativeToScVal address-type issues.
@@ -45,7 +45,7 @@ class BaseClient {
       .build();
 
     const simulated = await server.simulateTransaction(tx);
-    if (SorobanRpc.Api.isSimulationError(simulated)) {
+    if (rpc.Api.isSimulationError(simulated)) {
       throw new Error(`Simulation failed: ${simulated.error}`);
     }
     return { tx, simulated };
@@ -61,7 +61,7 @@ class BaseClient {
 
   async invoke(method, args, sourceAddress, signTransaction) {
     const { tx, simulated } = await this._buildAndSimulate(method, args, sourceAddress);
-    const prepared = SorobanRpc.assembleTransaction(tx, simulated).build();
+    const prepared = rpc.assembleTransaction(tx, simulated).build();
 
     const signedXdr = await signTransaction(prepared.toXDR());
     const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK.networkPassphrase);
@@ -77,10 +77,10 @@ class BaseClient {
   async _pollTransaction(hash, attempts = 20) {
     for (let i = 0; i < attempts; i++) {
       const result = await server.getTransaction(hash);
-      if (result.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+      if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
         return { hash, status: 'SUCCESS', result };
       }
-      if (result.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
+      if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
         throw new Error(`Transaction failed on-chain: ${hash}`);
       }
       await new Promise((r) => setTimeout(r, 1500));
