@@ -38,6 +38,9 @@ jobs:
 
       - name: Run contract tests
         run: cargo test --workspace --verbose 2>&1 | tail -60
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   frontend:
     name: Frontend — lint, test & build
