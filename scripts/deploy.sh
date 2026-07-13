@@ -14,8 +14,11 @@ set -euo pipefail
 NETWORK="testnet"
 IDENTITY="deployer"
 
-echo "==> Building contracts"
-stellar contract build
+echo "==> Building TransferLog contract"
+stellar contract build --manifest-path contracts/translog/Cargo.toml
+
+echo "==> Building ProductRegistry contract"
+stellar contract build --manifest-path contracts/registry/Cargo.toml
 
 echo "==> Deploying TransferLog contract"
 TRANSLOG_ID=$(stellar contract deploy \
