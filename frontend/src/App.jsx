@@ -64,6 +64,7 @@ export default function App() {
         wallet.signTransaction
       );
       setSuccess(`Product registered on-chain. Transaction: ${result.hash}`);
+      wallet.fetchBalance(wallet.address);
       // In a production build, decode the return value from the tx result to get the exact ID.
       setRegisteredProductId('see transaction result / next sequential ID');
     } catch (err) {
@@ -89,6 +90,7 @@ export default function App() {
         wallet.signTransaction
       );
       setSuccess(`Custody transferred on-chain. Transaction: ${result.hash}`);
+      wallet.fetchBalance(wallet.address);
     } catch (err) {
       setError(`Transfer failed: ${err.message}`);
     } finally {
@@ -107,6 +109,7 @@ export default function App() {
     try {
       await registryClient.flagCounterfeit(verifiedProductId, wallet.address, wallet.signTransaction);
       await handleVerify(verifiedProductId);
+      wallet.fetchBalance(wallet.address);
       setSuccess('Product flagged. Thank you for helping keep the registry honest.');
     } catch (err) {
       setError(`Could not flag product: ${err.message}`);

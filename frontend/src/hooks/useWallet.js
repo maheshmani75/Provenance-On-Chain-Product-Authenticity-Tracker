@@ -4,9 +4,11 @@ import {
   WalletNetwork,
   allowAllModules,
 } from '@creit.tech/stellar-wallets-kit';
+import { rpc } from '@stellar/stellar-sdk';
 import { NETWORK } from '../contracts/config';
 
 let kitInstance = null;
+const server = new rpc.Server(NETWORK.rpcUrl);
 
 function getKit() {
   if (!kitInstance) {
@@ -25,13 +27,33 @@ function getKit() {
  */
 export function useWallet() {
   const [address, setAddress] = useState(null);
+  const [balance, setBalance] = useState(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState(null);
 
+  const fetchBalance = useCallback(async (addr) => {
+    if (!addr) {
+      setBalance(null);
+      return;
+    }
+    try {
+      const account = await server.getAccount(addr);
+      const nativeBalance = account.balances.find((b) => b.asset_type === 'native');
+      if (nativeBalance) {
+        setBalance(nativeBalance.balance);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch balance', err);
+    }
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem('provenance:lastAddress');
-    if (saved) setAddress(saved);
-  }, []);
+    if (saved) {
+      setAddress(saved);
+      fetchBalance(saved);
+    }
+  }, [fetchBalance]);
 
   const connect = useCallback(async () => {
     setConnecting(true);
@@ -44,6 +66,7 @@ export function useWallet() {
           const { address: addr } = await kit.getAddress();
           setAddress(addr);
           localStorage.setItem('provenance:lastAddress', addr);
+          fetchBalance(addr);
         },
       });
     } catch (err) {
@@ -55,6 +78,7 @@ export function useWallet() {
 
   const disconnect = useCallback(() => {
     setAddress(null);
+    setBalance(null);
     localStorage.removeItem('provenance:lastAddress');
   }, []);
 
@@ -67,5 +91,5 @@ export function useWallet() {
     return signedTxXdr;
   }, [address]);
 
-  return { address, connecting, error, connect, disconnect, signTransaction, isConnected: !!address };
+  return { address, balance, connecting, error, connect, disconnect, signTransaction, fetchBalance, isConnected: !!address };
 }
