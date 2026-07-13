@@ -1,24 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   StellarWalletsKit,
-  WalletNetwork,
   allowAllModules,
 } from '@creit.tech/stellar-wallets-kit';
-import { rpc } from '@stellar/stellar-sdk';
 import { NETWORK } from '../contracts/config';
 
 let kitInstance = null;
-const server = new rpc.Server(NETWORK.rpcUrl);
 
 function getKit() {
   if (!kitInstance) {
     kitInstance = new StellarWalletsKit({
-      network: WalletNetwork.TESTNET,
+      network: 'TESTNET',
       selectedWalletId: undefined,
       modules: allowAllModules(),
     });
   }
   return kitInstance;
+}
+
+/**
+ * Fetch XLM balance directly from Horizon REST API.
+ * This avoids any stellar-sdk version issues since it's a plain fetch.
+ */
+async function fetchXlmBalance(addr) {
+  try {
+    const res = await fetch(`${NETWORK.horizonUrl}/accounts/${addr}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const native = data.balances?.find((b) => b.asset_type === 'native');
+    return native ? native.balance : '0';
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -32,19 +45,9 @@ export function useWallet() {
   const [error, setError] = useState(null);
 
   const fetchBalance = useCallback(async (addr) => {
-    if (!addr) {
-      setBalance(null);
-      return;
-    }
-    try {
-      const account = await server.getAccount(addr);
-      const nativeBalance = account.balances.find((b) => b.asset_type === 'native');
-      if (nativeBalance) {
-        setBalance(nativeBalance.balance);
-      }
-    } catch (err) {
-      console.warn('Failed to fetch balance', err);
-    }
+    if (!addr) { setBalance(null); return; }
+    const bal = await fetchXlmBalance(addr);
+    setBalance(bal);
   }, []);
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export function useWallet() {
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [fetchBalance]);
 
   const disconnect = useCallback(() => {
     setAddress(null);

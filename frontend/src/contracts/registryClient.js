@@ -1,7 +1,34 @@
-import { Contract, rpc, TransactionBuilder, BASE_FEE, nativeToScVal, scValToNative } from '@stellar/stellar-sdk';
+import {
+  Contract,
+  rpc,
+  TransactionBuilder,
+  BASE_FEE,
+  Address,
+  xdr,
+} from '@stellar/stellar-sdk';
 import { NETWORK, CONTRACTS } from './config';
 
-const server = new rpc.Server(NETWORK.rpcUrl);
+const server = new rpc.Server(NETWORK.rpcUrl, { allowHttp: false });
+
+// ─── ScVal helpers ────────────────────────────────────────────────────────────
+// In stellar-sdk v13, @stellar/stellar-base is bundled inside.
+// We build ScVals manually to avoid any nativeToScVal address-type issues.
+
+function scAddress(strKey) {
+  return Address.fromString(strKey).toScVal();
+}
+
+function scString(str) {
+  return xdr.ScVal.scvString(Buffer.from(str, 'utf8'));
+}
+
+function scU64(n) {
+  // BigInt or number → u64 ScVal
+  const big = typeof n === 'bigint' ? n : BigInt(n);
+  return xdr.ScVal.scvU64(xdr.Uint64.fromString(big.toString()));
+}
+
+// ─── Base client ─────────────────────────────────────────────────────────────
 
 class BaseClient {
   constructor(contractId) {
@@ -28,6 +55,8 @@ class BaseClient {
   async view(method, args = [], sourceAddress) {
     const { simulated } = await this._buildAndSimulate(method, args, sourceAddress);
     if (simulated.result?.retval) {
+      // Return the raw ScVal — callers can use scValToNative if needed
+      const { scValToNative } = await import('@stellar/stellar-sdk');
       return scValToNative(simulated.result.retval);
     }
     return null;
@@ -38,7 +67,8 @@ class BaseClient {
     const prepared = rpc.assembleTransaction(tx, simulated).build();
 
     const signedXdr = await signTransaction(prepared.toXDR());
-    const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK.networkPassphrase);
+    const { TransactionBuilder: TB } = await import('@stellar/stellar-sdk');
+    const signedTx = TB.fromXDR(signedXdr, NETWORK.networkPassphrase);
 
     const sendResponse = await server.sendTransaction(signedTx);
     if (sendResponse.status === 'ERROR') {
@@ -48,14 +78,14 @@ class BaseClient {
     return this._pollTransaction(sendResponse.hash);
   }
 
-  async _pollTransaction(hash, attempts = 15) {
+  async _pollTransaction(hash, attempts = 20) {
     for (let i = 0; i < attempts; i++) {
       const result = await server.getTransaction(hash);
-      if (result.status === 'SUCCESS') {
+      if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
         return { hash, status: 'SUCCESS', result };
       }
-      if (result.status === 'FAILED') {
-        throw new Error(`Transaction failed: ${hash}`);
+      if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
+        throw new Error(`Transaction failed on-chain: ${hash}`);
       }
       await new Promise((r) => setTimeout(r, 1500));
     }
@@ -63,7 +93,8 @@ class BaseClient {
   }
 }
 
-/** Thin client around the ProductRegistry Soroban contract. */
+// ─── ProductRegistry client ───────────────────────────────────────────────────
+
 export class RegistryClient extends BaseClient {
   constructor(contractId = CONTRACTS.REGISTRY_CONTRACT_ID) {
     super(contractId);
@@ -71,41 +102,42 @@ export class RegistryClient extends BaseClient {
 
   registerProduct(manufacturer, name, serialNumber, transferLog, signTransaction) {
     const args = [
-      nativeToScVal(manufacturer, { type: 'address' }),
-      nativeToScVal(name, { type: 'string' }),
-      nativeToScVal(serialNumber, { type: 'string' }),
-      nativeToScVal(transferLog, { type: 'address' }),
+      scAddress(manufacturer),
+      scString(name),
+      scString(serialNumber),
+      scAddress(transferLog),
     ];
     return this.invoke('register_product', args, manufacturer, signTransaction);
   }
 
   transferCustody(productId, to, location, currentOwner, signTransaction) {
     const args = [
-      nativeToScVal(BigInt(productId), { type: 'u64' }),
-      nativeToScVal(to, { type: 'address' }),
-      nativeToScVal(location, { type: 'string' }),
+      scU64(productId),
+      scAddress(to),
+      scString(location),
     ];
     return this.invoke('transfer_custody', args, currentOwner, signTransaction);
   }
 
   flagCounterfeit(productId, flaggedBy, signTransaction) {
-    const args = [nativeToScVal(BigInt(productId), { type: 'u64' }), nativeToScVal(flaggedBy, { type: 'address' })];
+    const args = [scU64(productId), scAddress(flaggedBy)];
     return this.invoke('flag_counterfeit', args, flaggedBy, signTransaction);
   }
 
   getProduct(productId, sourceAddress) {
-    return this.view('get_product', [nativeToScVal(BigInt(productId), { type: 'u64' })], sourceAddress);
+    return this.view('get_product', [scU64(productId)], sourceAddress);
   }
 }
 
-/** Thin read-only client around the TransferLog Soroban contract. */
+// ─── TransferLog client (read-only) ──────────────────────────────────────────
+
 export class TransferLogClient extends BaseClient {
   constructor(contractId = CONTRACTS.TRANSLOG_CONTRACT_ID) {
     super(contractId);
   }
 
   getHistory(productId, sourceAddress) {
-    return this.view('get_history', [nativeToScVal(BigInt(productId), { type: 'u64' })], sourceAddress);
+    return this.view('get_history', [scU64(productId)], sourceAddress);
   }
 }
 
