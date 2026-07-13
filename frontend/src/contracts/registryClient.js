@@ -19,7 +19,7 @@ function scAddress(strKey) {
 }
 
 function scString(str) {
-  return xdr.ScVal.scvString(Buffer.from(str, 'utf8'));
+  return xdr.ScVal.scvString(new TextEncoder().encode(str));
 }
 
 function scU64(n) {
