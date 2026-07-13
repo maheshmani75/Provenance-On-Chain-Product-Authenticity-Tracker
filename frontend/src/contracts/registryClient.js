@@ -1,18 +1,18 @@
 import {
   Contract,
-  rpc,
+  SorobanRpc,
   TransactionBuilder,
   BASE_FEE,
   Address,
   xdr,
+  scValToNative,
 } from '@stellar/stellar-sdk';
 import { NETWORK, CONTRACTS } from './config';
 
-const server = new rpc.Server(NETWORK.rpcUrl, { allowHttp: false });
+const server = new SorobanRpc.Server(NETWORK.rpcUrl, { allowHttp: false });
 
 // ─── ScVal helpers ────────────────────────────────────────────────────────────
-// In stellar-sdk v13, @stellar/stellar-base is bundled inside.
-// We build ScVals manually to avoid any nativeToScVal address-type issues.
+// Build XDR ScVals manually to avoid nativeToScVal address-type issues.
 
 function scAddress(strKey) {
   return Address.fromString(strKey).toScVal();
@@ -23,7 +23,6 @@ function scString(str) {
 }
 
 function scU64(n) {
-  // BigInt or number → u64 ScVal
   const big = typeof n === 'bigint' ? n : BigInt(n);
   return xdr.ScVal.scvU64(xdr.Uint64.fromString(big.toString()));
 }
@@ -46,7 +45,7 @@ class BaseClient {
       .build();
 
     const simulated = await server.simulateTransaction(tx);
-    if (rpc.Api.isSimulationError(simulated)) {
+    if (SorobanRpc.Api.isSimulationError(simulated)) {
       throw new Error(`Simulation failed: ${simulated.error}`);
     }
     return { tx, simulated };
@@ -55,8 +54,6 @@ class BaseClient {
   async view(method, args = [], sourceAddress) {
     const { simulated } = await this._buildAndSimulate(method, args, sourceAddress);
     if (simulated.result?.retval) {
-      // Return the raw ScVal — callers can use scValToNative if needed
-      const { scValToNative } = await import('@stellar/stellar-sdk');
       return scValToNative(simulated.result.retval);
     }
     return null;
@@ -64,11 +61,10 @@ class BaseClient {
 
   async invoke(method, args, sourceAddress, signTransaction) {
     const { tx, simulated } = await this._buildAndSimulate(method, args, sourceAddress);
-    const prepared = rpc.assembleTransaction(tx, simulated).build();
+    const prepared = SorobanRpc.assembleTransaction(tx, simulated).build();
 
     const signedXdr = await signTransaction(prepared.toXDR());
-    const { TransactionBuilder: TB } = await import('@stellar/stellar-sdk');
-    const signedTx = TB.fromXDR(signedXdr, NETWORK.networkPassphrase);
+    const signedTx = TransactionBuilder.fromXDR(signedXdr, NETWORK.networkPassphrase);
 
     const sendResponse = await server.sendTransaction(signedTx);
     if (sendResponse.status === 'ERROR') {
@@ -81,10 +77,10 @@ class BaseClient {
   async _pollTransaction(hash, attempts = 20) {
     for (let i = 0; i < attempts; i++) {
       const result = await server.getTransaction(hash);
-      if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
+      if (result.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
         return { hash, status: 'SUCCESS', result };
       }
-      if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
+      if (result.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
         throw new Error(`Transaction failed on-chain: ${hash}`);
       }
       await new Promise((r) => setTimeout(r, 1500));

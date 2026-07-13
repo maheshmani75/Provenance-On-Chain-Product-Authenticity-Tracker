@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "1.9.5",
-    "@stellar/stellar-sdk": "^13.1.1",
+    "@stellar/stellar-sdk": "^12.1.1",
     "jsqr": "^1.4.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
