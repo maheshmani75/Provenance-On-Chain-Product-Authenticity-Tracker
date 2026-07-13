@@ -48,7 +48,6 @@ impl TransferLogContract {
         if env.storage().instance().has(&DataKey::AuthorizedRegistry) {
             return Err(TransferLogError::AlreadyInitialized);
         }
-        registry.require_auth();
         env.storage().instance().set(&DataKey::AuthorizedRegistry, &registry);
         Ok(())
     }
