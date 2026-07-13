@@ -44,18 +44,18 @@ The smart contracts are live and deployed to the **Stellar Testnet** via automat
 
 ### 1. Mobile Responsive UI
 Our frontend is built mobile-first using Tailwind CSS, ensuring smooth QR scanning and verification on any device.
-![Mobile Responsive UI](screenshots/mobile%20responsive%20UI.png)
+![Mobile Responsive UI](./screenshots/mobile-responsive-UI.png)
 
 ### 2. Product UI & Web Experience
-![Product UI](screenshots/product%20ui.png)
+![Product UI](./screenshots/product-ui.png)
 
 ### 3. CI/CD Pipeline Running (GitHub Actions)
 Our GitHub Actions pipeline automatically builds WASM contracts, lints the frontend, and runs test suites.
-![CI/CD Pipeline](screenshots/CICD.png)
+![CI/CD Pipeline](./screenshots/CICD.png)
 
 ### 4. Test Output with Passing Tests
 We have 12+ smart contract unit tests and frontend Vitest suites ensuring stability.
-![Test Output](screenshots/test%20output.png)
+![Test Output](./screenshots/test-output.png)
 
 ---
 
@@ -98,8 +98,3 @@ npm run dev       # local dev server
 npm run test      # Vitest unit tests
 npm run build     # production build
 ```
-
----
-
-## 📄 License
-This project is licensed under the MIT License.
