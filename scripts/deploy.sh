@@ -19,14 +19,14 @@ stellar contract build
 
 echo "==> Deploying TransferLog contract"
 TRANSLOG_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/transfer_log.wasm \
+  --wasm target/wasm32v1-none/release/transfer_log.wasm \
   --source "$IDENTITY" \
   --network "$NETWORK")
 echo "TransferLog deployed at: $TRANSLOG_ID"
 
 echo "==> Deploying ProductRegistry contract"
 REGISTRY_ID=$(stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/product_registry.wasm \
+  --wasm target/wasm32v1-none/release/product_registry.wasm \
   --source "$IDENTITY" \
   --network "$NETWORK")
 echo "ProductRegistry deployed at: $REGISTRY_ID"

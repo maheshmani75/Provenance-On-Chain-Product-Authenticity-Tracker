@@ -10,7 +10,7 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractevent, contractimpl, contracttype, Address, Env, String, Vec};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
 
 #[contracttype]
 #[derive(Clone)]
@@ -36,14 +36,7 @@ pub enum TransferLogError {
     Unauthorized = 3,
 }
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct TransferRecorded {
-    #[topic]
-    pub product_id: u64,
-    pub from: Address,
-    pub to: Address,
-}
+
 
 #[contract]
 pub struct TransferLogContract;
@@ -86,7 +79,7 @@ impl TransferLogContract {
         let hop_count = log.len();
         env.storage().persistent().set(&key, &log);
 
-        TransferRecorded { product_id, from, to }.publish(&env);
+        env.events().publish((symbol_short!("Transfer"), product_id), (from, to));
         Ok(hop_count)
     }
 

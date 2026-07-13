@@ -11,11 +11,11 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractevent, contractimpl, contracttype, Address, Env, String};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String};
 
 mod translog {
     soroban_sdk::contractimport!(
-        file = "../translog/target/wasm32-unknown-unknown/release/transfer_log.wasm"
+        file = "../translog/target/wasm32v1-none/release/transfer_log.wasm"
     );
 }
 
@@ -47,31 +47,7 @@ pub enum RegistryError {
     AlreadyFlagged = 4,
 }
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct ProductRegistered {
-    #[topic]
-    pub product_id: u64,
-    pub manufacturer: Address,
-    pub serial_number: String,
-}
 
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct CustodyTransferred {
-    #[topic]
-    pub product_id: u64,
-    pub from: Address,
-    pub to: Address,
-}
-
-#[contractevent]
-#[derive(Clone, Debug)]
-pub struct ProductFlagged {
-    #[topic]
-    pub product_id: u64,
-    pub flagged_by: Address,
-}
 
 #[contract]
 pub struct ProductRegistryContract;
@@ -102,7 +78,7 @@ impl ProductRegistryContract {
         };
         env.storage().persistent().set(&DataKey::Product(product_id), &product);
 
-        ProductRegistered { product_id, manufacturer, serial_number }.publish(&env);
+        env.events().publish((symbol_short!("Register"), product_id), (manufacturer, serial_number));
         Ok(product_id)
     }
 
@@ -126,7 +102,7 @@ impl ProductRegistryContract {
         product.current_owner = to.clone();
         env.storage().persistent().set(&DataKey::Product(product_id), &product);
 
-        CustodyTransferred { product_id, from, to }.publish(&env);
+        env.events().publish((symbol_short!("Transfer"), product_id), (from, to));
         Ok(())
     }
 
@@ -144,7 +120,7 @@ impl ProductRegistryContract {
         product.flagged_counterfeit = true;
         env.storage().persistent().set(&DataKey::Product(product_id), &product);
 
-        ProductFlagged { product_id, flagged_by }.publish(&env);
+        env.events().publish((symbol_short!("Flagged"), product_id), flagged_by);
         Ok(())
     }
 
