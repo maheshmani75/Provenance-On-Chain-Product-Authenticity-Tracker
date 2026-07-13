@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,7 +19,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: wasm32v1-none
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -31,10 +31,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build transfer-log contract (wasm)
-        run: cargo build --target wasm32-unknown-unknown --release -p transfer-log
+        run: cargo build --target wasm32v1-none --release -p transfer-log
 
       - name: Build product-registry contract (wasm)
-        run: cargo build --target wasm32-unknown-unknown --release -p product-registry
+        run: cargo build --target wasm32v1-none --release -p product-registry
 
       - name: Run contract tests
         run: cargo test --workspace --verbose
