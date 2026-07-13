@@ -15,7 +15,7 @@ use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_sh
 
 mod translog {
     soroban_sdk::contractimport!(
-        file = "../translog/target/wasm32v1-none/release/transfer_log.wasm"
+        file = "../../target/wasm32v1-none/release/transfer_log.wasm"
     );
 }
 
